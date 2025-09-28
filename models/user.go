@@ -18,7 +18,7 @@ type UserPayload struct {
 }
 
 type UserUpdatePayload struct {
-	Name     string `json:"name" form:"name" binding:"required,min=3"`
-	Email    string `json:"email" form:"email" binding:"required,email"`
+	Name     string `json:"name" form:"name" binding:"omitempty,required,min=3"`
+	Email    string `json:"email" form:"email" binding:"omitempty,required,email"`
 	Password string `json:"password" form:"password" binding:"omitempty,required,min=6"`
 }

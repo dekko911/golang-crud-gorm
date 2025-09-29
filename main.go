@@ -12,7 +12,7 @@ func init() {
 
 func main() {
 	// routes
-	r := routes.NewApiRoutes()
+	r := routes.ApiRoutes()
 
 	r.Run()
 }

@@ -13,6 +13,7 @@ const (
 	NF     = http.StatusNotFound
 	CRD    = http.StatusCreated
 	FORBID = http.StatusForbidden
+	UNAUTH = http.StatusUnauthorized
 )
 
 var Validate = validator.New()

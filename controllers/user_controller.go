@@ -46,6 +46,16 @@ func GetUserByID(ctx *gin.Context) {
 	})
 }
 
+// agak aneh aja kelihatan ini satu
+func GetUserFromReqByEmail(email string, ctx *gin.Context) (*models.User, error) {
+	v, err := gorm.G[*models.User](initializers.DB).Where("email = ?", email).First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 func StoreUser(ctx *gin.Context) {
 	var req models.UserPayload
 
@@ -139,7 +149,7 @@ func UpdateUser(ctx *gin.Context) {
 	}
 
 	// then update user
-	if _, err := gorm.G[*models.User](initializers.DB).Where("id = ?", paramId).Updates(ctx, &models.User{
+	if _, err := gorm.G[models.User](initializers.DB).Where("id = ?", paramId).Updates(ctx, models.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: hashedPassword,

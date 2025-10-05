@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/what-crud/initializers"
@@ -10,8 +12,8 @@ import (
 )
 
 func GetUsers(ctx *gin.Context) {
-	res, err := gorm.G[*models.User](initializers.DB).Find(ctx)
-	if err != nil {
+	res, err := gorm.G[*models.User](initializers.DB).Order("name asc").Find(ctx)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(utils.ISE, gin.H{
 			"code":    utils.ISE,
 			"message": "Error",
@@ -29,8 +31,9 @@ func GetUsers(ctx *gin.Context) {
 
 func GetUserByID(ctx *gin.Context) {
 	paramId := ctx.Param("id")
+
 	res, err := gorm.G[*models.User](initializers.DB).Where("id = ?", paramId).First(ctx)
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(utils.NF, gin.H{
 			"code":    utils.NF,
 			"message": "User Not Found!",
@@ -47,9 +50,9 @@ func GetUserByID(ctx *gin.Context) {
 }
 
 // agak aneh aja kelihatan ini satu
-func GetUserFromReqByEmail(email string, ctx *gin.Context) (*models.User, error) {
+func GetUserByEmailFromReq(email string, ctx *gin.Context) (*models.User, error) {
 	v, err := gorm.G[*models.User](initializers.DB).Where("email = ?", email).First(ctx)
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
@@ -148,12 +151,30 @@ func UpdateUser(ctx *gin.Context) {
 		return
 	}
 
+	// check id nya jika ada
+	u, err := gorm.G[*models.User](initializers.DB).Where("id = ?", paramId).First(ctx)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(utils.NF, gin.H{
+			"code":    utils.NF,
+			"message": "User Not Found!",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// check field request nya satu-satu jika ada input yang kosong
+	if req.Name != "" {
+		u.Name = req.Name
+	}
+	if req.Email != "" {
+		u.Email = req.Email
+	}
+	if req.Password != "" {
+		u.Password = hashedPassword
+	}
+
 	// then update user
-	if _, err := gorm.G[models.User](initializers.DB).Where("id = ?", paramId).Updates(ctx, models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: hashedPassword,
-	}); err != nil {
+	if _, err := gorm.G[models.User](initializers.DB).Updates(ctx, *u); err != nil {
 		ctx.JSON(utils.ISE, gin.H{
 			"code":    utils.ISE,
 			"message": "Error",
@@ -170,8 +191,9 @@ func UpdateUser(ctx *gin.Context) {
 
 func DestroyUser(ctx *gin.Context) {
 	paramId := ctx.Param("id")
-	_, err := gorm.G[*models.User](initializers.DB).Where("id = ?", paramId).Delete(ctx)
-	if err != nil {
+
+	_, err := gorm.G[models.User](initializers.DB).Where("id = ?", paramId).Delete(ctx)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(utils.NF, gin.H{
 			"code":    utils.NF,
 			"message": "User Not Found!",

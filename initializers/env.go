@@ -7,10 +7,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var JWTSecret string
+var (
+	JWTSecret string
+	AppURL    string
+)
 
 func LoadEnv() {
 	godotenv.Load()
+	AppURL = os.Getenv("APP_URL")
 
 	// get jwt secret
 	JWTSecret = os.Getenv("JWT_SECRET")

@@ -31,7 +31,7 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := GetUserFromReqByEmail(req.Email, ctx)
+	user, err := GetUserByEmailFromReq(req.Email, ctx)
 	if err != nil {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,

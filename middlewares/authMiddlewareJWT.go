@@ -16,7 +16,6 @@ func AuthMiddlewareJWT() gin.HandlerFunc {
 		// tokenString := strings.Split(tokenHeader, "Bearer ")[1]
 		tokenString := strings.TrimPrefix(tokenHeader, "Bearer ")
 		tokenString = strings.TrimSpace(tokenString)
-
 		if tokenString == "" {
 			ctx.JSON(utils.UNAUTH, gin.H{
 				"code":  utils.UNAUTH,
@@ -34,8 +33,9 @@ func AuthMiddlewareJWT() gin.HandlerFunc {
 			return []byte(initializers.JWTSecret), nil
 		}); err != nil {
 			ctx.JSON(utils.ISE, gin.H{
-				"code":  utils.ISE,
-				"error": "Invalid Token.",
+				"code":    utils.ISE,
+				"message": "Invalid Token.",
+				"error":   err.Error(),
 			})
 			ctx.Abort()
 			return

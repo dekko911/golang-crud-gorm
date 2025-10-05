@@ -9,6 +9,7 @@ import (
 func ApiRoutes() *gin.Engine {
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"192.168.1.2"})
+	r.Use(middlewares.CorsConfig())
 
 	route := r.Group("/api")
 	{

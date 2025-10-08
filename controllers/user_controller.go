@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -49,7 +50,15 @@ func GetUserByID(ctx *gin.Context) {
 	})
 }
 
-// agak aneh aja kelihatan ini satu
+func GetUserByAuthID(userId string, ctx *gin.Context) (*models.User, error) {
+	v, err := gorm.G[*models.User](initializers.DB).Where("id = ?", userId).First(ctx)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 func GetUserByEmailFromReq(email string, ctx *gin.Context) (*models.User, error) {
 	v, err := gorm.G[*models.User](initializers.DB).Where("email = ?", email).First(ctx)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -61,6 +70,15 @@ func GetUserByEmailFromReq(email string, ctx *gin.Context) (*models.User, error)
 
 func StoreUser(ctx *gin.Context) {
 	var req models.UserPayload
+
+	file, err := ctx.FormFile("avatar")
+	if err != nil {
+		ctx.JSON(utils.NF, gin.H{
+			"code":  utils.NF,
+			"error": err.Error(),
+		})
+		return
+	}
 
 	// get data from request body
 	if err := ctx.ShouldBind(&req); err != nil {
@@ -78,7 +96,7 @@ func StoreUser(ctx *gin.Context) {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,
 			"message": "Bad Request",
-			"error":   errors,
+			"error":   errors.Error(),
 		})
 		return
 	}
@@ -94,11 +112,14 @@ func StoreUser(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SaveUploadedFile(file, "./assets/images/"+file.Filename)
+
 	// then create user
 	if err := gorm.G[models.User](initializers.DB).Create(ctx, &models.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: hashedPassword,
+		Avatar:   file.Filename,
 	}); err != nil {
 		ctx.JSON(utils.ISE, gin.H{
 			"code":    utils.ISE,
@@ -135,7 +156,7 @@ func UpdateUser(ctx *gin.Context) {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,
 			"message": "Bad Request",
-			"error":   errors,
+			"error":   errors.Error(),
 		})
 		return
 	}
@@ -192,8 +213,35 @@ func UpdateUser(ctx *gin.Context) {
 func DestroyUser(ctx *gin.Context) {
 	paramId := ctx.Param("id")
 
-	_, err := gorm.G[models.User](initializers.DB).Where("id = ?", paramId).Delete(ctx)
+	u, err := gorm.G[*models.User](initializers.DB).Where("id = ?", paramId).First(ctx)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(utils.NF, gin.H{
+			"code":    utils.NF,
+			"message": "User Not Found!",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	if u.Name == "admin" {
+		ctx.JSON(utils.FORBID, gin.H{
+			"code":    utils.FORBID,
+			"message": "User admin can't be deleted!",
+		})
+		return
+	}
+
+	filename := "./assets/images/" + u.Avatar
+	missing := os.Remove(filename)
+	if missing != nil {
+		ctx.JSON(utils.NF, gin.H{
+			"code":    utils.NF,
+			"message": "File not found.",
+		})
+		return
+	}
+
+	if _, err := gorm.G[models.User](initializers.DB).Where("id = ?", u.ID).Delete(ctx); errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(utils.NF, gin.H{
 			"code":    utils.NF,
 			"message": "User Not Found!",

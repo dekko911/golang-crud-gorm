@@ -26,7 +26,7 @@ func Login(ctx *gin.Context) {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,
 			"message": "Bad Request",
-			"error":   errors,
+			"error":   errors.Error(),
 		})
 		return
 	}
@@ -69,6 +69,15 @@ func Login(ctx *gin.Context) {
 func Register(ctx *gin.Context) {
 	var req models.UserPayload
 
+	file, err := ctx.FormFile("avatar")
+	if err != nil {
+		ctx.JSON(utils.NF, gin.H{
+			"code":  utils.NF,
+			"error": err.Error(),
+		})
+		return
+	}
+
 	if err := ctx.ShouldBind(&req); err != nil {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,
@@ -83,7 +92,7 @@ func Register(ctx *gin.Context) {
 		ctx.JSON(utils.BR, gin.H{
 			"code":    utils.BR,
 			"message": "Bad Request",
-			"error":   errors,
+			"error":   errors.Error(),
 		})
 		return
 	}
@@ -98,10 +107,13 @@ func Register(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SaveUploadedFile(file, "./assets/images/"+file.Filename)
+
 	if err := gorm.G[models.User](initializers.DB).Create(ctx, &models.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: hashedPassword,
+		Avatar:   file.Filename,
 	}); err != nil {
 		ctx.JSON(utils.ISE, gin.H{
 			"code":    utils.ISE,
@@ -114,5 +126,21 @@ func Register(ctx *gin.Context) {
 	ctx.JSON(utils.CRD, gin.H{
 		"code":    utils.CRD,
 		"message": "User Registered!",
+	})
+}
+
+func GetUserProfile(ctx *gin.Context) {
+	user, exist := ctx.Get("authUser")
+	if !exist {
+		ctx.JSON(utils.NF, gin.H{
+			"code":    utils.NF,
+			"message": "User is not login yet.",
+		})
+		return
+	}
+
+	ctx.JSON(utils.OK, gin.H{
+		"code": utils.OK,
+		"user": user,
 	})
 }

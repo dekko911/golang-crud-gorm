@@ -7,5 +7,9 @@ import (
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.ID = uuid.NewString()
+
+	if u.Avatar == "" {
+		u.Avatar = string("-")
+	}
 	return
 }

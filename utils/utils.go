@@ -14,6 +14,7 @@ const (
 	CRD    = http.StatusCreated
 	FORBID = http.StatusForbidden
 	UNAUTH = http.StatusUnauthorized
+	TMR    = http.StatusTooManyRequests
 )
 
 var Validate = validator.New()

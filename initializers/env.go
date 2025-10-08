@@ -10,11 +10,26 @@ import (
 var (
 	JWTSecret string
 	AppURL    string
+
+	host     string
+	port     string
+	database string
+	username string
+	password string
+	location string
 )
 
 func LoadEnv() {
 	godotenv.Load()
 	AppURL = os.Getenv("APP_URL")
+
+	// database
+	host = os.Getenv("DB_HOST")
+	port = os.Getenv("DB_PORT")
+	database = os.Getenv("DB_DATABASE")
+	username = os.Getenv("DB_USERNAME")
+	password = os.Getenv("DB_PASSWORD")
+	location = os.Getenv("DB_LOCATION")
 
 	// get jwt secret
 	JWTSecret = os.Getenv("JWT_SECRET")

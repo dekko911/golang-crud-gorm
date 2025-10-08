@@ -8,11 +8,10 @@ import (
 )
 
 func CreateJWT(userId string) (string, error) {
-	timestamp := time.Now().Add(3 * time.Hour).Unix()
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userId":     userId,
-		"expired_at": time.Unix(timestamp, 0),
+		"userId": userId,
+		"exp":    time.Now().Add(3 * time.Hour).Unix(),
+		"iat":    time.Now().Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(initializers.JWTSecret))
